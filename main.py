@@ -1,6 +1,7 @@
 import requests
 import json
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 
 url_page="http://isga.obrnadzor.gov.ru/accredreestr/search/?page="
 url_details="http://isga.obrnadzor.gov.ru/accredreestr/details/"
@@ -9,7 +10,9 @@ DATA = []
 
 
 def get_count_of_pages():
-    resp = requests.post(url_page+'100000000' , data={'searchby': 'organization'})  # Обращаемся к очень большой странице, скорее всего которой не будет
+    resp = requests.post(url_page+'100000000', \
+            data={'searchby': 'organization'}, \
+            headers={'User-Agent': UserAgent().chrome})                             # Обращаемся к очень большой странице, скорее всего которой не будет
     soup = BeautifulSoup(resp.text, 'lxml')                                         # В ответ получаем самую последнюю страницу, скорее всего 9124-тую
     page = soup.findAll('li')[-2].find('a').text                                    # И берем вытаскиваем тест с предпоследней кнопки
     return int(page)
@@ -21,7 +24,9 @@ def get_INN(data_id):
     return inn.text
 
 def get_data_from_page(page): 
-    resp = requests.post(url_page+page , data={'searchby': 'organization'})
+    resp = requests.post(url_page+page, \
+            data={'searchby': 'organization'}, \
+            headers={'User-Agent': UserAgent().chrome}) 
     soup = BeautifulSoup(resp.text, 'lxml')
     tbody = soup.findAll('tr')[1:]
     for tr in tbody:
