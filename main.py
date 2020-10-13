@@ -13,8 +13,9 @@ def get_count_of_pages():
     resp = requests.post(url_page + '100000000', \
                          data={
                              'searchby': 'organization',
-                             'eduOrgAddress': 'Москва',
-                             'eduOrgTypeId': '40'
+                             'regionId': '76',
+                             'eduOrgTypeId': '40', 
+                             'certStatusId': '1'
                              }, 
                          headers={
                              'User-Agent': UserAgent().chrome})  # Обращаемся к очень большой странице, скорее всего которой не будет
