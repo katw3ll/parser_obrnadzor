@@ -11,7 +11,11 @@ DATA = []
 
 def get_count_of_pages():
     resp = requests.post(url_page + '100000000', \
-                         data={'searchby': 'organization'}, \
+                         data={
+                             'searchby': 'organization',
+                             'eduOrgAddress': 'Москва',
+                             'eduOrgTypeId': '40'
+                             }, 
                          headers={
                              'User-Agent': UserAgent().chrome})  # Обращаемся к очень большой странице, скорее всего которой не будет
     soup = BeautifulSoup(resp.text, 'lxml')  # В ответ получаем самую последнюю страницу, скорее всего 9124-тую
@@ -43,7 +47,7 @@ def get_data_from_page(page):
 def parse():
     print("Getting count of page...")
     count = get_count_of_pages()
-    count = 300
+    # count = 300
     print("Count of pages:", count)
     for i in range(1, count + 1):
         print('Parsing page ' + str(i))
