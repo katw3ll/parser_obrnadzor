@@ -2,12 +2,16 @@ from xml.etree import ElementTree
 from zipfile import ZipFile
 import requests
 from bs4 import BeautifulSoup
-
+import sys
+import datetime
+from pymongo import MongoClient
+from itertools import islice
 
 RKN_URL = 'https://rkn.gov.ru'
 DATASET_PAGE_URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/'
 FAKE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:81.0) Gecko/20100101 Firefox/81.0'
-
+ZIP_DOWNLOAD_PATH = 'operatorspd.zip'
+INSERT_CHUNK_SIZE = 10000
 
 def find_dataset(url=DATASET_PAGE_URL, user_agent=FAKE_USER_AGENT):
     '''
@@ -55,71 +59,46 @@ def download(url, save_path, chunk_size=4096, user_agent=FAKE_USER_AGENT):
 
 
 def unpack(zip_file_path):
+    '''
+    Unpacks zip file at `zip_file_path` and returns file name of extracted XML
+
+    :param zip_file_path: Path to ZIP archive
+    :return: Path to unzipped XML
+    '''
     with open(zip_file_path, 'rb') as file:
         archive = ZipFile(file, 'r')
         archive.extractall()
+        return archive.namelist()[0]
 
 
-def extract_text(parent_element, element_name):
-    node = parent_element.find(element_name)
-    if node is not None:
-        return node.text
+def parse_record(elem):
+    '''
+    Parses an operator record into dictionary
 
+    :param elem:
+    :return:
+    '''
+    operator = {}
+    for e in elem:
+        if 'date' in e.tag:
+            try:
+                operator[e.tag] = datetime.datetime.strptime(elem.text, '%Y-%m-%d')
+            except ValueError:
+                continue
+        elif e.tag == 'is_list':
+            parse_is = lambda elem: {m.tag:m.text for m in elem}
+            operator[e.tag] = [parse_is(i) for i in e]
+        else:
+            operator[e.tag] = e.text
 
-# Fields to be extracted for each InfoSystem
-INFOSYSTEM_FIELDS = ['name',
-                     'pd_category',
-                     'category_sub_txt',
-                     'actions_category',
-                     'pd_handle',
-                     'transgran_transfer',
-                     'db_country']
-
-# Fields to be extracted for each Operator
-OPERATOR_FIELDS = ['pd_operator_num',
-                   'enter_date',
-                   'enter_order',
-                   'status',
-                   'name_full',
-                   'inn',
-                   'address',
-                   'income_date',
-                   'territory',
-                   'purpose_txt',
-                   'basis',
-                   'safeguards_txt',
-                   'resp_name',
-                   'startdate',
-                   'stop_condition',
-                   'stop_date',
-                   'enter_order_num',
-                   'enter_order_date',
-                   'end_order_date',
-                   'end_order_num']
-
-
-class InfoSystem:
-    def __init__(self, elem):
-        for field in INFOSYSTEM_FIELDS:
-            vars(self)[field] = extract_text(elem, field)
-
-
-class Operator:
-    def __init__(self, elem):
-        for field in OPERATOR_FIELDS:
-            vars(self)[field] = extract_text(elem, field)
-
-        self.infosystems = []
-        infosystem_list = elem.find('is_list')
-        for is_elem in infosystem_list.iter('is'):
-            self.infosystems.append(InfoSystem(is_elem))
+    return operator
 
 
 def operators(file_name):
     '''
-    Iterates over operators in a given XML
+    Iterates over operators in a XML
 
-    :param file_name: File to parse operator info from
+    :param file_name: XML file to parse operator info from
     :return: Iterator over Operator objects
     '''
 
@@ -129,14 +108,41 @@ def operators(file_name):
 
         # Process a `record` element when ElementTree finishes parsing it
         if event == 'end' and elem.tag == 'record':
-            yield Operator(elem)
+            yield parse_record(elem)
             elem.clear()
 
 
-if __name__ == '__main__':
-    # dataset_url = find_dataset()
-    # download(dataset_url, 'operatorspd.zip')
-    # unpack('operatorspd.zip')
+def chunked(iterable, size):
+    it = iter(iterable)
+    while True:
+        chunk = tuple(islice(it, size))
+        if not chunk:
+            break
+        yield chunk
 
-    for operator in operators('data-20201016T0000-structure-20180129T0000.xml'):
-        print(f'inn={operator.inn} name_full={operator.name_full}')
+
+def main(xml_path=None):
+    if xml_path is None:
+        dataset_url = find_dataset()
+        download(dataset_url, ZIP_DOWNLOAD_PATH)
+        xml_path = unpack(ZIP_DOWNLOAD_PATH)
+    client = MongoClient()
+    operatorspd = client.RKN.operatorspd
+
+    # Wiping the collection and writing data again sounds dirty, but actually seems to be
+    # faster than upserting the data, mostly because MongoDB doesn't have to compare
+    # objects to each other.
+    operatorspd.drop()
+
+    # Write the data in chunks to lower memory requirements
+    print('Chunk size is %d operators' % INSERT_CHUNK_SIZE)
+    for i, chunk in enumerate(chunked(operators(xml_path), INSERT_CHUNK_SIZE)):
+        print('Writing chunk #%d' % i)
+        operatorspd.insert_many(chunk)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) >= 2:
+        main(sys.argv[1])
+    else:
+        main()
