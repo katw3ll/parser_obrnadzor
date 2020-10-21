@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import requests
 import sys
 from bs4 import BeautifulSoup
@@ -114,7 +115,7 @@ def operators(file_name):
 def chunked(iterable, size):
     it = iter(iterable)
     while True:
-        chunk = tuple(islice(it, size))
+        chunk = tuple(itertools.islice(it, size))
         if not chunk:
             break
         yield chunk
