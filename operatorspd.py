@@ -1,11 +1,10 @@
+import datetime
+import requests
+import sys
+from bs4 import BeautifulSoup
+from pymongo import MongoClient
 from xml.etree import ElementTree
 from zipfile import ZipFile
-import requests
-from bs4 import BeautifulSoup
-import sys
-import datetime
-from pymongo import MongoClient
-from itertools import islice
 
 RKN_URL = 'https://rkn.gov.ru'
 DATASET_PAGE_URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/'

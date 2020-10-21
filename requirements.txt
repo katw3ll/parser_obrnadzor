@@ -1,2 +1,4 @@
 fake_useragent
 bs4
+requests
+pymongo
