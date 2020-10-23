@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as Etree 
 from fake_useragent import UserAgent
 from pymongo import MongoClient
+from bs4 import BeautifulSoup
 import requests
 import zipfile
 import pymongo
@@ -13,13 +14,21 @@ class DB:
         self.PATH_XML = PATH_XML
         self.PATH_FOLDER_XML = PATH_FOLDER_XML    
 
-    def DownloadData(self, URL, PATH_ZIP):
+    def GetUrlOfZip(self, URL):
+        r = requests.get(URL, headers = {'User-Agent': UserAgent().chrome})
+        soup = BeautifulSoup(r.text, 'html.parser')
+        table = soup.find_all(name='table', attrs = {'class': 'TblList'})
+        self.URL += table[0].contents[18].contents[5].contents[0].get('href').split('/')[3]
+        return 
+        
+    def DownloadData(self, PATH_ZIP):
         '''
         Скачивание zip файла
         '''
         try:
+            self.GetUrlOfZip(URL)
             z = open(PATH_ZIP, "wb")
-            r = requests.get(URL, stream = True, headers = {'User-Agent': UserAgent().chrome})
+            r = requests.get(self.URL, stream = True, headers = {'User-Agent': UserAgent().chrome})
             for chunk in r.iter_content(chunk_size = 8388608):
                     z.write(chunk)
         except FileExistsError as err:
@@ -101,18 +110,18 @@ class DB:
 
 if __name__ == "__main__":
     '''
-    URL - ссылка для скачивания zip
+    URL - ссылка на сайт, где лежит zip
     PATH_ZIP - Куда скачать zip с сайта
     PATH_FOLDER_XML - Куда распаковать zip
     PATH_XML - Полный путь до xml (для InsertIntoLocal)
     '''
 
-    URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/data-20201017T0000-structure-20180129T0000.zip' 
+    URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/'
     PATH_ZIP = r'C:\Users\areak\Desktop\parser_API\data.zip'
     PATH_XML = r'C:\Users\areak\Desktop\parser_API\data-20201017T0000-structure-20180129T0000.xml'
     PATH_FOLDER_XML = r'C:\Users\areak\Desktop\parser_API'
 
     db = DB(URL, PATH_ZIP, PATH_FOLDER_XML)
-    # db.DownloadData(db.URL, db.PATH_ZIP)
+    db.DownloadData(db.PATH_ZIP)
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
-    db.InsertIntoLocal(PATH_XML, True)
+    # db.InsertIntoLocal(PATH_XML, True)
