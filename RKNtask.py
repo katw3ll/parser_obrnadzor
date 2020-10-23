@@ -19,9 +19,7 @@ class DB:
         '''
         try:
             z = open(PATH_ZIP, "wb")
-            r = requests.get(URL, stream = True, headers = { \
-                            'User-Agent': UserAgent().chrome})
-
+            r = requests.get(URL, stream = True, headers = {'User-Agent': UserAgent().chrome})
             for chunk in r.iter_content(chunk_size = 8388608):
                     z.write(chunk)
         except FileExistsError as err:
@@ -47,17 +45,21 @@ class DB:
             # print("Файл закрыт! GetXML")
 
     def InitDbConnection(self, option):
-        if option: # Подключение к локальной
+        if option: # Подключение к локальной, пересоздание и обновление коллекции records_local
             client = MongoClient('localhost', 27017)
             db = client.RKN
+            if 'records_local' in db.collection_names():
+                db.drop_collection('records_local')
             collection = db.records_local
-        else: # Подключение к бд на сервере
+        else: # Подключение к бд на сервере, пересоздание и обновление коллекции records
             client = MongoClient('23.105.226.109',
                         username='root',
                         password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
                         authSource='admin',
                         authMechanism='SCRAM-SHA-1')
-            db = client.RKNN
+            db = client.RKN
+            if 'records' in db.collection_names():
+                db.drop_collection('records')
             collection = db.records
         return collection
 
@@ -106,11 +108,11 @@ if __name__ == "__main__":
     '''
 
     URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/data-20201017T0000-structure-20180129T0000.zip' 
-    PATH_ZIP = r'C:\Users\areak\Desktop\Корягин\data.zip'
-    PATH_XML = r'C:\Users\areak\Desktop\Корягин\data-20201017T0000-structure-20180129T0000.xml'
-    PATH_FOLDER_XML = r'C:\Users\areak\Desktop\Корягин'
+    PATH_ZIP = r'C:\Users\areak\Desktop\parser_API\data.zip'
+    PATH_XML = r'C:\Users\areak\Desktop\parser_API\data-20201017T0000-structure-20180129T0000.xml'
+    PATH_FOLDER_XML = r'C:\Users\areak\Desktop\parser_API'
 
     db = DB(URL, PATH_ZIP, PATH_FOLDER_XML)
     # db.DownloadData(db.URL, db.PATH_ZIP)
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
-    # db.InsertIntoLocal(PATH_XML, True)
+    db.InsertIntoLocal(PATH_XML, True)
