@@ -7,12 +7,14 @@ import zipfile
 import pymongo
 import os
 
+
 class DB:
     def __init__(self, URL = '', PATH_ZIP = '', PATH_FOLDER_XML = '', PATH_XML = ''):
         self.URL = URL
         self.PATH_ZIP = PATH_ZIP
         self.PATH_XML = PATH_XML
         self.PATH_FOLDER_XML = PATH_FOLDER_XML    
+
 
     def GetUrlOfZip(self, URL):
         r = requests.get(URL, headers = {'User-Agent': UserAgent().chrome})
@@ -21,6 +23,7 @@ class DB:
         self.URL += table[0].contents[18].contents[5].contents[0].get('href').split('/')[3]
         return 
         
+
     def DownloadData(self, PATH_ZIP):
         '''
         Скачивание zip файла
@@ -37,6 +40,7 @@ class DB:
             z.close()
         # print("Файл закрыт! DownloadData")
 
+
     def GetXML(self, PATH_ZIP, PATH_FOLDER_XML):
         '''
         Распаковка zip и получение xml
@@ -52,6 +56,7 @@ class DB:
         else:
             z.close()
             # print("Файл закрыт! GetXML")
+
 
     def InitDbConnection(self, option):
         if option: # Подключение к локальной, пересоздание и обновление коллекции records_local
@@ -72,7 +77,8 @@ class DB:
             collection = db.records
         return collection
 
-    def InsertIntoLocal(self, PATH_XML, option):
+
+    def InsertIntoDb(self, PATH_XML, option):
         '''
         Запись в локальную бд
         option == True => запись в локальную бд
@@ -108,6 +114,7 @@ class DB:
                 elem.clear()
                 document = {}
 
+
 if __name__ == "__main__":
     '''
     URL - ссылка на сайт, где лежит zip
@@ -124,4 +131,4 @@ if __name__ == "__main__":
     db = DB(URL, PATH_ZIP, PATH_FOLDER_XML)
     db.DownloadData(db.PATH_ZIP)
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
-    # db.InsertIntoLocal(PATH_XML, True)
+    # db.InsertIntoDb(PATH_XML, True)
