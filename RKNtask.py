@@ -20,6 +20,18 @@ class DB:
         for document in data:
             collection_vps.insert_one(document)
 
+    
+    def TranserDataFromVpsToLocal(self):
+        '''
+        Перемещение коллекции с сервера в локальную бд
+        '''
+        collection_local = self.InitDbConnection(True, True)
+        collection_vps = self.InitDbConnection(False, False)
+
+        data = collection_vps.find({})
+        for document in data:
+            collection_local.insert_one(document)
+
 
     def __init__(self, URL = '', PATH_ZIP = '', PATH_FOLDER_XML = '', PATH_XML = ''):
         self.URL = URL
@@ -155,3 +167,4 @@ if __name__ == "__main__":
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
     # db.InsertIntoDb(True)
     # db.TranserDataToVps()
+    db.TranserDataFromVpsToLocal()
