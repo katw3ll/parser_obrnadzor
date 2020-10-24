@@ -43,6 +43,18 @@ data = {
 headers = {'User-Agent': UserAgent().chrome}
 
 
+def TranserDataToVps():
+    '''
+        Перемещение локальной коллекции на сервер VPS
+    '''
+    collection_local = InitDbConnection(True, False)
+    collection_vps = InitDbConnection(False, True)
+
+    data = collection_local.find({})
+    for document in data:
+        collection_vps.insert_one(document)
+
+
 def GetCountOfPages():
     '''
     Узнаем количество страниц, на которых расположена таблица
@@ -73,23 +85,24 @@ def GetSpecificSoup(key):
     return soup
 
 
-def InitDbConnection(option):
-        if option: # Подключение к локальной, пересоздание и обновление коллекции obrnadzor_local
-            client = MongoClient('localhost', 27017)
-            db = client.RKN
-            if 'obrnadzor_local' in db.collection_names():
-                db.drop_collection('obrnadzor_local')
-            collection = db.obrnadzor_local
-        else: # Подключение к бд на сервере, пересоздание и обновление коллекции obrnadzor
-            client = MongoClient('23.105.226.109',
-                        username='root',
-                        password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
-                        authSource='admin',
-                        authMechanism='SCRAM-SHA-1')
-            db = client.RKN
-            if 'obrnadzor' in db.collection_names():
-                db.drop_collection('obrnadzor')
-            collection = db.obrnadzor
+def InitDbConnection(option, option_delete):
+    if option: # Подключение к локальной, пересоздание и обновление коллекции obrnadzor_local
+        client = MongoClient('localhost', 27017)
+        db = client.RKN
+        if 'obrnadzor_local' in db.collection_names() and option_delete:
+            db.drop_collection('obrnadzor_local')
+        collection = db.obrnadzor_local
+        return collection
+    else: # Подключение к бд на сервере, пересоздание и обновление коллекции obrnadzor
+        client = MongoClient('23.105.226.109',
+                    username='root',
+                    password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
+                    authSource='admin',
+                    authMechanism='SCRAM-SHA-1')
+        db = client.RKN
+        if 'obrnadzor' in db.collection_names() and option_delete:
+            db.drop_collection('obrnadzor')
+        collection = db.obrnadzor
         return collection
 
 
@@ -104,8 +117,8 @@ def FillParts(td_list, document_part):
         return document_part
 
 
-def InsertIntoDb(option):
-    collection = InitDbConnection(option)
+def InsertIntoDb(option, option_delete):
+    collection = InitDbConnection(option, option_delete)
     document = {}
     for i in range(GetCountOfPages() + 1):
         soup_generic = GetGenericSoup(i)
@@ -130,4 +143,5 @@ def InsertIntoDb(option):
             collection.insert_one(document)
 
 if __name__ == '__main__':
-    InsertIntoDb(True)
+    # InsertIntoDb(True, False)
+    # TranserDataToVps()

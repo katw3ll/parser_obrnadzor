@@ -9,6 +9,18 @@ import os
 
 
 class DB:
+    def TranserDataToVps(self):
+        '''
+        Перемещение локальной коллекции на сервер VPS
+        '''
+        collection_local = self.InitDbConnection(True, False)
+        collection_vps = self.InitDbConnection(False, True)
+
+        data = collection_local.find({})
+        for document in data:
+            collection_vps.insert_one(document)
+
+
     def __init__(self, URL = '', PATH_ZIP = '', PATH_FOLDER_XML = '', PATH_XML = ''):
         self.URL = URL
         self.PATH_ZIP = PATH_ZIP
@@ -17,6 +29,9 @@ class DB:
 
 
     def GetUrlOfZip(self, URL):
+        '''
+        Извлечение ссылки на zip файл
+        '''
         r = requests.get(URL, headers = {'User-Agent': UserAgent().chrome})
         soup = BeautifulSoup(r.text, 'html.parser')
         table = soup.find_all(name='table', attrs = {'class': 'TblList'})
@@ -43,12 +58,12 @@ class DB:
 
     def GetXML(self, PATH_ZIP, PATH_FOLDER_XML):
         '''
-        Распаковка zip и получение xml
+        Распаковка zip и получение пути xml файла
         '''
         try:
             z = zipfile.ZipFile(PATH_ZIP, 'r')
             z.extractall(PATH_FOLDER_XML)
-            self.PATH_XML = PATH_FOLDER_XML + "\\" + str(z.namelist()[0])
+            self.PATH_XML = PATH_FOLDER_XML + '\\' + str(z.namelist()[0])
         except FileExistsError as err:
             print(str(err))
         except FileNotFoundError as err:
@@ -58,35 +73,43 @@ class DB:
             # print("Файл закрыт! GetXML")
 
 
-    def InitDbConnection(self, option):
-        if option: # Подключение к локальной, пересоздание и обновление коллекции records_local
+    def InitDbConnection(self, option, option_delete):
+        '''
+        option == True => подключение к локальной бд
+        option == False => подключение к бд на VPS
+
+        option_delete == True => удаление коллекции
+        option_delete == False => коллекция не удаляется
+        '''
+        if option: # Подключение к локальной коллекции records_local
             client = MongoClient('localhost', 27017)
             db = client.RKN
-            if 'records_local' in db.collection_names():
+            if 'records_local' in db.collection_names() and option_delete:
                 db.drop_collection('records_local')
             collection = db.records_local
-        else: # Подключение к бд на сервере, пересоздание и обновление коллекции records
+            return collection
+        else: # Подключение к бд на сервере к коллекции records
             client = MongoClient('23.105.226.109',
                         username='root',
                         password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
                         authSource='admin',
                         authMechanism='SCRAM-SHA-1')
             db = client.RKN
-            if 'records' in db.collection_names():
+            if 'records' in db.collection_names() and option_delete:
                 db.drop_collection('records')
             collection = db.records
-        return collection
+            return collection
 
 
-    def InsertIntoDb(self, PATH_XML, option):
+    def InsertIntoDb(self, option):
         '''
         Запись в локальную бд
         option == True => запись в локальную бд
         option == False => запись в бд на сервере
         '''
-        collection = self.InitDbConnection(option)
+        collection = self.InitDbConnection(option, True)
 
-        context = Etree.iterparse(PATH_XML, events=('start','end'))
+        context = Etree.iterparse(self.PATH_XML, events=('start','end'))
         context = iter(context)
         event, _ = context.__next__()
 
@@ -125,10 +148,10 @@ if __name__ == "__main__":
 
     URL = 'https://rkn.gov.ru/opendata/7705846236-OperatorsPD/'
     PATH_ZIP = r'C:\Users\areak\Desktop\parser_API\data.zip'
-    PATH_XML = r'C:\Users\areak\Desktop\parser_API\data-20201017T0000-structure-20180129T0000.xml'
     PATH_FOLDER_XML = r'C:\Users\areak\Desktop\parser_API'
 
     db = DB(URL, PATH_ZIP, PATH_FOLDER_XML)
-    db.DownloadData(db.PATH_ZIP)
+    # db.DownloadData(db.PATH_ZIP)
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
-    # db.InsertIntoDb(PATH_XML, True)
+    # db.InsertIntoDb(True)
+    # db.TranserDataToVps()
