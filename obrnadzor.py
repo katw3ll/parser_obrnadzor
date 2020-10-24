@@ -44,18 +44,30 @@ headers = {'User-Agent': UserAgent().chrome}
 
 
 def GetCountOfPages():
+    '''
+    Узнаем количество страниц, на которых расположена таблица
+    с неполной информацией об объектах.
+    '''
     resp = requests.post(URL_GENERIC + '1', data=data, headers=headers)
     soup = BeautifulSoup(resp.text, 'html.parser')
     return int(soup.find('h3').text.split('(')[1][:5])
 
 
 def GetGenericSoup(page_number):
+    '''
+    Получаем страницу, на которой находится таблица с информацией о множестве
+    объектов, но информация о них является неполной.
+    '''
     resp = requests.post(URL_GENERIC + str(page_number), data=data, headers=headers)
     soup = BeautifulSoup(resp.text, 'html.parser')
     return soup
 
 
 def GetSpecificSoup(key):
+    '''
+    Получаем страницу, на которой находится таблица, в которой хранится
+    полная информация об одном объекте.
+    '''
     resp = requests.get(URL_SPECIFIC + str(key) + '/1/')
     soup = BeautifulSoup(resp.text, 'html.parser')
     return soup
@@ -82,6 +94,11 @@ def InitDbConnection(option):
 
 
 def FillParts(td_list, document_part):
+    '''
+    Документ, вставляемый в mongo состоит из 2-х частей, т.к таблица
+    с полной информацией об одном объекте разделена на две части.
+    Эта функция заполняет ту часть, которая передана в эту функцию.
+    '''
     if len(td_list) > 1:
         document_part[td_list[0].text] = td_list[1].text
         return document_part

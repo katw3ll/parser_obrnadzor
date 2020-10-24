@@ -18,6 +18,9 @@ def GetSoup():
 
 
 def InitDbConnectionObrnadzor(option):
+    '''
+    Подключаемся к коллекции obrnadzor, из которой будет происходить выборка по критериям
+    '''
         if option: # Подключение к локальной, пересоздание и обновление коллекции obrnadzor_local
             client = MongoClient('localhost', 27017)
             db = client.RKN
@@ -34,6 +37,9 @@ def InitDbConnectionObrnadzor(option):
 
     
 def InitDbConnectionEdu(option):
+    '''
+    Подключаемся к коллекции edu, в которую будет производиться запись данных из obrnadzor
+    '''
         if option: # Подключение к локальной, пересоздание и обновление коллекции edu_records
             client = MongoClient('localhost', 27017)
             db = client.RKN
@@ -54,6 +60,9 @@ def InitDbConnectionEdu(option):
 
 
 def GetRegionsDict():
+    '''
+    Получаем словарь вида: 'номер региона': 'название региона'
+    '''
     soup = GetSoup()
     select = soup.find('select', attrs = {'name': 'regionId', 'class': 'form-control'})
     options_list = select.find_all('option')
@@ -69,6 +78,14 @@ def GetRegionsDict():
 
 
 def InsertIntoDb(option_obrnadzor, option_edu, inn = None, region = None):
+    '''
+    Выборка элементов из коллекции obrnadzor и вставка их в edu
+    Выборка происходит по 2-м критериям:
+        1) ИНН
+        2) Номер региона
+    Можно ввести как один критерий, так и сразу два
+    Если не вводить никаких критериев отбора, то будут выбраны и вставлены все элементы из коллекции
+    '''
     collection = InitDbConnectionObrnadzor(option_obrnadzor)
     collection_edu = InitDbConnectionEdu(option_edu)
     dictionary = GetRegionsDict()
@@ -85,4 +102,4 @@ def InsertIntoDb(option_obrnadzor, option_edu, inn = None, region = None):
 
 
 if __name__ == '__main__':
-    InsertIntoDb(True, True, None, 77)
+    # InsertIntoDb(True, True, None, 77)
