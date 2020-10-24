@@ -9,6 +9,13 @@ import os
 
 
 class DB:
+    def __init__(self, URL = '', PATH_ZIP = '', PATH_FOLDER_XML = '', PATH_XML = ''):
+        self.URL = URL
+        self.PATH_ZIP = PATH_ZIP
+        self.PATH_XML = PATH_XML
+        self.PATH_FOLDER_XML = PATH_FOLDER_XML  
+
+
     def TranserDataToVps(self):
         '''
         Перемещение локальной коллекции на сервер VPS
@@ -30,14 +37,7 @@ class DB:
 
         data = collection_vps.find({})
         for document in data:
-            collection_local.insert_one(document)
-
-
-    def __init__(self, URL = '', PATH_ZIP = '', PATH_FOLDER_XML = '', PATH_XML = ''):
-        self.URL = URL
-        self.PATH_ZIP = PATH_ZIP
-        self.PATH_XML = PATH_XML
-        self.PATH_FOLDER_XML = PATH_FOLDER_XML    
+            collection_local.insert_one(document)  
 
 
     def GetUrlOfZip(self, URL):
@@ -87,26 +87,26 @@ class DB:
 
     def InitDbConnection(self, option, option_delete):
         '''
-        option == True => подключение к локальной бд
+        option == True => подключение к локальной бд \n
         option == False => подключение к бд на VPS
 
-        option_delete == True => удаление коллекции
+        option_delete == True => удаление коллекции \n
         option_delete == False => коллекция не удаляется
         '''
-        if option: # Подключение к локальной коллекции records_local
+        if option:
             client = MongoClient('localhost', 27017)
-            db = client.RKN
+            db = client.RKNN
             if 'records_local' in db.collection_names() and option_delete:
                 db.drop_collection('records_local')
             collection = db.records_local
             return collection
-        else: # Подключение к бд на сервере к коллекции records
+        else:
             client = MongoClient('23.105.226.109',
                         username='root',
                         password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
                         authSource='admin',
                         authMechanism='SCRAM-SHA-1')
-            db = client.RKN
+            db = client.RKNN
             if 'records' in db.collection_names() and option_delete:
                 db.drop_collection('records')
             collection = db.records
@@ -115,8 +115,8 @@ class DB:
 
     def InsertIntoDb(self, option):
         '''
-        Запись в локальную бд
-        option == True => запись в локальную бд
+        Запись в локальную бд \n
+        option == True => запись в локальную бд \n
         option == False => запись в бд на сервере
         '''
         collection = self.InitDbConnection(option, True)
@@ -167,4 +167,4 @@ if __name__ == "__main__":
     # db.GetXML(db.PATH_ZIP, db.PATH_FOLDER_XML)
     # db.InsertIntoDb(True)
     # db.TranserDataToVps()
-    db.TranserDataFromVpsToLocal()
+    # db.TranserDataFromVpsToLocal()

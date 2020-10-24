@@ -57,7 +57,7 @@ def TranserDataToVps():
 
 def GetCountOfPages():
     '''
-    Узнаем количество страниц, на которых расположена таблица
+    Узнаем количество страниц, на которых расположена таблица \n
     с неполной информацией об объектах.
     '''
     resp = requests.post(URL_GENERIC + '1', data=data, headers=headers)
@@ -67,7 +67,7 @@ def GetCountOfPages():
 
 def GetGenericSoup(page_number):
     '''
-    Получаем страницу, на которой находится таблица с информацией о множестве
+    Получаем страницу, на которой находится таблица с информацией о множестве \n
     объектов, но информация о них является неполной.
     '''
     resp = requests.post(URL_GENERIC + str(page_number), data=data, headers=headers)
@@ -77,7 +77,7 @@ def GetGenericSoup(page_number):
 
 def GetSpecificSoup(key):
     '''
-    Получаем страницу, на которой находится таблица, в которой хранится
+    Получаем страницу, на которой находится таблица, в которой хранится \n
     полная информация об одном объекте.
     '''
     resp = requests.get(URL_SPECIFIC + str(key) + '/1/')
@@ -86,9 +86,16 @@ def GetSpecificSoup(key):
 
 
 def InitDbConnection(option, option_delete):
+    '''
+    option == True => подключение к локальной бд \n
+    option == False => подключение к бд на VPS
+
+    option_delete == True => удаление коллекции \n
+    option_delete == False => коллекция не удаляется
+    '''
     if option: # Подключение к локальной, пересоздание и обновление коллекции obrnadzor_local
         client = MongoClient('localhost', 27017)
-        db = client.RKN
+        db = client.RKNN
         if 'obrnadzor_local' in db.collection_names() and option_delete:
             db.drop_collection('obrnadzor_local')
         collection = db.obrnadzor_local
@@ -99,7 +106,7 @@ def InitDbConnection(option, option_delete):
                     password='MW6Vh6dlw4FaNv0aSi4Rs15Y',
                     authSource='admin',
                     authMechanism='SCRAM-SHA-1')
-        db = client.RKN
+        db = client.RKNN
         if 'obrnadzor' in db.collection_names() and option_delete:
             db.drop_collection('obrnadzor')
         collection = db.obrnadzor
@@ -108,8 +115,8 @@ def InitDbConnection(option, option_delete):
 
 def FillParts(td_list, document_part):
     '''
-    Документ, вставляемый в mongo состоит из 2-х частей, т.к таблица
-    с полной информацией об одном объекте разделена на две части.
+    Документ, вставляемый в mongo состоит из 2-х частей, т.к таблица \n
+    с полной информацией об одном объекте разделена на две части. \n
     Эта функция заполняет ту часть, которая передана в эту функцию.
     '''
     if len(td_list) > 1:
@@ -145,3 +152,4 @@ def InsertIntoDb(option, option_delete):
 if __name__ == '__main__':
     # InsertIntoDb(True, False)
     # TranserDataToVps()
+    print()
